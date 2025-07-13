@@ -63,6 +63,7 @@ def official_evaluate(tmp, path, tag, args):
     '''
         Adapted from the official evaluation code
     '''
+    path = '/kaggle/working'
     truth_dir = os.path.join(path, 'ref')
 
     if not os.path.exists(truth_dir):
