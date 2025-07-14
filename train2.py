@@ -93,7 +93,7 @@ def train(args, model, train_features, dev_features, save_best_val=True, lr=1e-4
         for step, batch in enumerate(tqdm(train_dataloader)):
             model.train()
             # # print(switch)
-
+        print("epoch: ", epoch, file=dual_out)
             inputs = {'input_ids': batch[0].to(args.device),
                     'attention_mask': batch[1].to(args.device),
                     'labels': batch[2],
