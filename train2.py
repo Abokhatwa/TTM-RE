@@ -68,7 +68,7 @@ def train(args, model, train_features, dev_features, save_best_val=True, lr=1e-4
     num_steps = 0
     set_seed(args)
     model.zero_grad()
-    log_path = open(os.path.join(args.save_path, "progress.log"), "a")
+    log_path = os.path.join(args.save_path, "progress.log")
     dual_out = DualStream(log_path)
 #     finetune(train_features, optimizer, args.num_train_epochs, num_steps)
 # def finetune(features, optimizer, args.num_train_epochs, num_steps):
