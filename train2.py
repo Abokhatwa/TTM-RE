@@ -100,7 +100,6 @@ def train(args, model, train_features, dev_features, save_best_val=True, lr=1e-4
                     'hts': batch[4],
                     # 'sampled_docs': sampled_docs,
                     }
-
             outputs = model(**inputs)
             loss = sum(outputs[0]) / args.gradient_accumulation_steps
             loss.backward()
