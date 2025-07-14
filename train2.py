@@ -90,6 +90,7 @@ def train(args, model, train_features, dev_features, save_best_val=True, lr=1e-4
     print("Warmup steps: {}".format(warmup_steps))
     for epoch in tqdm(train_iterator):
         model.zero_grad()
+        print("epoch: ", epoch, file=dual_out)
         for step, batch in enumerate(tqdm(train_dataloader)):
             model.train()
             # # print(switch)
