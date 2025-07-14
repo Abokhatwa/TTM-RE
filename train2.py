@@ -28,6 +28,20 @@ def set_seed(args):
     torch.manual_seed(args.seed)
     if args.n_gpu > 0 and torch.cuda.is_available():
         torch.cuda.manual_seed_all(args.seed)
+        
+class DualStream:
+    def __init__(self, file_path):
+        self.terminal = sys.stdout
+        self.log = open(file_path, "a")
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+
+    def flush(self):
+        self.terminal.flush()
+        self.log.flush()
+
 
 def collate_fn(batch):
     max_len = max([len(f["input_ids"]) for f in batch])
@@ -54,7 +68,8 @@ def train(args, model, train_features, dev_features, save_best_val=True, lr=1e-4
     num_steps = 0
     set_seed(args)
     model.zero_grad()
-    tqdm_log_file = open(os.path.join(args.save_path, "progress.log"), "a")
+    log_path = open(os.path.join(args.save_path, "progress.log"), "a")
+    dual_out = DualStream(log_path)
 #     finetune(train_features, optimizer, args.num_train_epochs, num_steps)
 # def finetune(features, optimizer, args.num_train_epochs, num_steps):
 
@@ -73,10 +88,10 @@ def train(args, model, train_features, dev_features, save_best_val=True, lr=1e-4
 
     print("Total steps: {}".format(total_steps))
     print("Warmup steps: {}".format(warmup_steps))
-    for epoch in tqdm(train_iterator, file=tqdm_log_file):
+    for epoch in tqdm(train_iterator, file=dual_out):
         model.zero_grad()
 
-        for step, batch in enumerate(tqdm(train_dataloader, file=tqdm_log_file)):
+        for step, batch in enumerate(tqdm(train_dataloader, file=dual_out)):
             model.train()
             # # print(switch)
 
@@ -103,20 +118,20 @@ def train(args, model, train_features, dev_features, save_best_val=True, lr=1e-4
                 num_steps += 1
 
             if (step + 1) == len(train_dataloader) - 1 or (args.evaluation_steps > 0 and num_steps % args.evaluation_steps == 0 and step % args.gradient_accumulation_steps == 0):
-                print("training risk:", loss.item(), "   step:", num_steps)
+                print("training risk:", loss.item(), "   step:", num_steps, file=dual_out)
                 if "chemdisgene" in args.data_dir.lower():
                     avg_val_risk, test_output = cal_val_risk_bio(args, model, dev_features)
                 else:
                     avg_val_risk, test_output = cal_val_risk(args, model, dev_features)
-                print('avg val risk:', avg_val_risk, test_output, '\n')
+                print('avg val risk:', avg_val_risk, test_output, '\n', file=dual_out)
                 
                 if test_features is not None:
                     if "chemdisgene" in args.data_dir.lower():
                         test_score, test_output = evaluate_bio(args, model, test_features, tag="test")
                     else:
                         test_score, test_output = evaluate(args, model, test_features, tag="test")
-                    print('test risk:', test_score, test_output, '\n')
-                    tqdm_log_file.flush()
+                    print('test risk:', test_score, test_output, '\n', file=dual_out)
+                    dual_out.flush()
                 if (epoch > save_after_epoch) and (best_model is None) or (avg_val_risk[0] < best_val_risk):
                     best_val_risk = avg_val_risk[0]
                     # copy the model state dict
