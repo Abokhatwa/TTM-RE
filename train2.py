@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import copy
 import pickle
+import sys
 # from apex import amp
 # import ujson as json
 from torch.utils.data import DataLoader
@@ -53,6 +54,7 @@ def train(args, model, train_features, dev_features, save_best_val=True, lr=1e-4
     num_steps = 0
     set_seed(args)
     model.zero_grad()
+    tqdm_log_file = open(os.path.join(args.save_path, "progress.log"), "a")
 #     finetune(train_features, optimizer, args.num_train_epochs, num_steps)
 # def finetune(features, optimizer, args.num_train_epochs, num_steps):
 
@@ -71,10 +73,10 @@ def train(args, model, train_features, dev_features, save_best_val=True, lr=1e-4
 
     print("Total steps: {}".format(total_steps))
     print("Warmup steps: {}".format(warmup_steps))
-    for epoch in tqdm(train_iterator):
+    for epoch in tqdm(train_iterator, file=tqdm_log_file):
         model.zero_grad()
 
-        for step, batch in enumerate(tqdm(train_dataloader)):
+        for step, batch in enumerate(tqdm(train_dataloader, file=tqdm_log_file)):
             model.train()
             # # print(switch)
 
@@ -114,7 +116,7 @@ def train(args, model, train_features, dev_features, save_best_val=True, lr=1e-4
                     else:
                         test_score, test_output = evaluate(args, model, test_features, tag="test")
                     print('test risk:', test_score, test_output, '\n')
-                    
+                    tqdm_log_file.flush()
                 if (epoch > save_after_epoch) and (best_model is None) or (avg_val_risk[0] < best_val_risk):
                     best_val_risk = avg_val_risk[0]
                     # copy the model state dict
